@@ -413,18 +413,15 @@ export function ConfigPage() {
                                             {(parsedConfig?.user?.sidebar?.social || []).map((item: any, index: number) => (
                                                 <div key={index} className="flex items-center gap-3 group p-2 hover:bg-base-200/50 rounded-xl transition-colors">
                                                     <select 
-                                                        className="select select-bordered select-sm w-32 bg-base-100"
-                                                        value={SOCIAL_PRESETS.find(p => p.value === item.svg)?.value || 'custom'}
+                                                        className="select select-bordered select-sm w-32 bg-base-100 focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary transition-all"
+                                                        value={SOCIAL_PRESETS.find(p => p.value === item.svg)?.value || 'ri:link'}
                                                         onChange={e => {
-                                                            if (e.target.value !== 'custom') {
-                                                                handleSocialChange(index, 'svg', e.target.value)
-                                                            }
+                                                            handleSocialChange(index, 'svg', e.target.value)
                                                         }}
                                                     >
                                                         {SOCIAL_PRESETS.map(p => (
                                                             <option key={p.value} value={p.value}>{p.label}</option>
                                                         ))}
-                                                        <option value="custom">Custom</option>
                                                     </select>
                                                     
                                                     <input 
@@ -523,7 +520,7 @@ export function ConfigPage() {
                                         <div className="card bg-base-100 shadow-sm border border-base-200 p-6 rounded-2xl space-y-4">
                                             <div className="form-control w-full">
                                                 <label className="label"><span className="label-text font-medium">评论插件</span></label>
-                                                <select className="select select-bordered w-full bg-base-100"
+                                                <select className="select select-bordered w-full bg-base-100 focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary transition-all"
                                                     value={parsedConfig?.comments?.type || 'giscus'}
                                                     onChange={e => updateConfigValue('comments.type', e.target.value)}>
                                                     <option value="giscus">Giscus</option>
