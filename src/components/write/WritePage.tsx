@@ -35,7 +35,7 @@ export default function WritePage() {
 
 	return (
         <>
-            <Toaster />
+            <Toaster richColors position="top-center" />
             {isPreview ? (
                 <WritePreview form={form} coverPreviewUrl={coverPreviewUrl} onClose={closePreview} slug={slug || undefined} />
             ) : (
