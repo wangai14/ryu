@@ -1,6 +1,7 @@
 import { motion } from 'motion/react'
 import { useWriteStore } from '../../stores/write-store'
 import { TagInput } from '../ui/tag-input'
+import { CustomSelect } from '../ui/custom-select'
 import { useState } from 'react'
 
 type MetaSectionProps = {
@@ -11,6 +12,11 @@ type MetaSectionProps = {
 export function MetaSection({ delay = 0, categories = [] }: MetaSectionProps) {
 	const { form, updateForm } = useWriteStore()
     const [isCustomCategory, setIsCustomCategory] = useState(false)
+
+    const categoryOptions = [
+        ...categories.map(c => ({ value: c, label: c })),
+        { value: '__custom__', label: '+ 自定义/多选...' }
+    ]
 
 	return (
 		<motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay }} className='card bg-base-100 border border-base-200 shadow-sm p-4 relative'>
@@ -30,24 +36,18 @@ export function MetaSection({ delay = 0, categories = [] }: MetaSectionProps) {
                 
                 <div className="text-xs font-medium text-base-content/70">分类</div>
 				{categories.length > 0 && !isCustomCategory ? (
-					<select 
-						className="select select-bordered w-full bg-base-100 focus:select-primary text-sm transition-colors hover:border-primary focus:border-primary"
-						value={categories.includes(form.categories[0]) ? form.categories[0] : ''}
-						onChange={e => {
-							const val = e.target.value
-							if (val === '__custom__') {
-								setIsCustomCategory(true)
-							} else {
-								updateForm({ categories: [val] })
-							}
-						}}
-					>
-						<option value="" disabled>选择分类...</option>
-						{categories.map(c => (
-							<option key={c} value={c}>{c}</option>
-						))}
-						<option value="__custom__">+ 自定义/多选...</option>
-					</select>
+                    <CustomSelect
+                        value={categories.includes(form.categories[0]) ? form.categories[0] : ''}
+                        onChange={val => {
+                            if (val === '__custom__') {
+                                setIsCustomCategory(true)
+                            } else {
+                                updateForm({ categories: [val] })
+                            }
+                        }}
+                        options={categoryOptions}
+                        placeholder="选择分类..."
+                    />
 				) : (
                     <div className="space-y-1">
                         <TagInput tags={form.categories} onChange={categories => updateForm({ categories })} />

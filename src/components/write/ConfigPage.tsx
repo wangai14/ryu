@@ -7,6 +7,7 @@ import { toBase64Utf8 } from '@/lib/github-client'
 import yaml from 'js-yaml'
 import { useAuthStore } from './hooks/use-auth'
 import { readFileAsText, fileToBase64NoPrefix } from '@/lib/file-utils'
+import { CustomSelect } from './components/ui/custom-select'
 
 // Common social icons mapping
 const SOCIAL_PRESETS = [
@@ -22,6 +23,11 @@ const SOCIAL_PRESETS = [
     { label: 'Weibo', value: 'ri:weibo-line' },
     { label: 'Zhihu', value: 'ri:zhihu-line' },
     { label: 'Other', value: 'ri:link' }
+]
+
+const COMMENT_PROVIDERS = [
+    { value: 'giscus', label: 'Giscus' },
+    { value: 'waline', label: 'Waline' }
 ]
 
 export function ConfigPage() {
@@ -66,6 +72,7 @@ export function ConfigPage() {
                 setLoading(false)
                 return
             }
+
 			const content = await readTextFileFromRepo(
 				token,
 				GITHUB_CONFIG.OWNER,
@@ -78,16 +85,8 @@ export function ConfigPage() {
                 try {
                     setParsedConfig(yaml.load(content))
                 } catch (e) {
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+                    console.error(e)
                 }
-			} else {
-        const previewUrl = URL.createObjectURL(file)
-        setPendingImages(prev => ({ ...prev, [uploadTarget]: { file, previewUrl } }))
-        // 预览时直接显示本地图片
-        updateConfigValue(uploadTarget, previewUrl)
-        setUploadTarget('')
-        if (imageInputRef.current) imageInputRef.current.value = ''
-        toast.info('图片已缓存，保存配置时会统一上传')
 			}
 		} catch (error: any) {
 			toast.error('加载配置失败: ' + error.message)
@@ -100,35 +99,6 @@ export function ConfigPage() {
         if (!parsedConfig) return
         const newConfig = JSON.parse(JSON.stringify(parsedConfig))
         const parts = path.split('.')
-            for (const [target, { file }] of Object.entries(pendingImages)) {
-                toast.info(`正在上传图片: ${target}`)
-                const base64 = await fileToBase64NoPrefix(file)
-                const ext = file.name.split('.').pop() || 'png'
-                const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-                const path = `public/images/uploads/${filename}`
-                await putFile(
-                    token,
-                    GITHUB_CONFIG.OWNER,
-                    GITHUB_CONFIG.REPO,
-                    path,
-                    base64,
-                    `upload: ${filename}`,
-                    GITHUB_CONFIG.BRANCH
-                )
-                const publicPath = `/images/uploads/${filename}`
-                // 更新 configToUpdate
-                if (configToUpdate) {
-                    const parts = target.split('.')
-                    let current = configToUpdate
-                    for (let i = 0; i < parts.length - 1; i++) {
-                        if (!current[parts[i]]) current[parts[i]] = {}
-                        current = current[parts[i]]
-                    }
-                    current[parts[parts.length - 1]] = publicPath
-                }
-            }
-            // 清空缓存
-            setPendingImages({})
         let current = newConfig
         for (let i = 0; i < parts.length - 1; i++) {
             if (!current[parts[i]]) current[parts[i]] = {}
@@ -186,12 +156,59 @@ export function ConfigPage() {
 	const handleSave = async () => {
 		try {
 			setSaving(true)
-            let contentToSave = configContent
-            if (mode === 'visual' && parsedConfig) {
-                contentToSave = yaml.dump(parsedConfig)
+            const token = await getAuthToken()
+            if (!token) throw new Error('未授权')
+
+            let configToUpdate = parsedConfig ? JSON.parse(JSON.stringify(parsedConfig)) : null
+
+            // Upload pending images
+            if (Object.keys(pendingImages).length > 0) {
+                const totalImages = Object.keys(pendingImages).length
+                toast.info(`准备上传 ${totalImages} 张图片...`)
+                
+                let idx = 1
+                for (const [target, { file }] of Object.entries(pendingImages)) {
+                    toast.info(`正在上传第 ${idx}/${totalImages} 张图片: ${file.name}...`)
+                    const base64 = await fileToBase64NoPrefix(file)
+                    const ext = file.name.split('.').pop() || 'png'
+                    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+                    const path = `public/images/uploads/${filename}`
+                    
+                    await putFile(
+                        token,
+                        GITHUB_CONFIG.OWNER,
+                        GITHUB_CONFIG.REPO,
+                        path,
+                        base64,
+                        `upload: ${filename}`,
+                        GITHUB_CONFIG.BRANCH
+                    )
+
+                    const publicPath = `/images/uploads/${filename}`
+                    
+                    // Update config with new path
+                    if (configToUpdate) {
+                        const parts = target.split('.')
+                        let current = configToUpdate
+                        for (let i = 0; i < parts.length - 1; i++) {
+                            if (!current[parts[i]]) current[parts[i]] = {}
+                            current = current[parts[i]]
+                        }
+                        current[parts[parts.length - 1]] = publicPath
+                    }
+                    idx++
+                }
+                setPendingImages({})
+                toast.success('所有图片上传完成')
             }
 
-			const token = await getAuthToken()
+            let contentToSave = configContent
+            if (mode === 'visual' && configToUpdate) {
+                contentToSave = yaml.dump(configToUpdate)
+                setParsedConfig(configToUpdate)
+                setConfigContent(contentToSave)
+            }
+
 			await putFile(
 				token,
 				GITHUB_CONFIG.OWNER,
@@ -203,6 +220,7 @@ export function ConfigPage() {
 			)
 			toast.success('配置已更新！等待部署生效')
 		} catch (error: any) {
+            console.error(error)
 			toast.error('保存配置失败: ' + error.message)
 		} finally {
 			setSaving(false)
@@ -214,41 +232,19 @@ export function ConfigPage() {
         imageInputRef.current?.click()
     }
 
-    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file || !uploadTarget) return
 
-        try {
-            setUploadingImage(true)
-            const token = await getAuthToken()
-            if (!token) throw new Error('未授权')
-
-            const base64 = await fileToBase64NoPrefix(file)
-            const ext = file.name.split('.').pop() || 'png'
-            const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-            const path = `public/images/uploads/${filename}`
-            
-            await putFile(
-                token,
-                GITHUB_CONFIG.OWNER,
-                GITHUB_CONFIG.REPO,
-                path,
-                base64,
-                `upload: ${filename}`,
-                GITHUB_CONFIG.BRANCH
-            )
-
-            const publicPath = `/images/uploads/${filename}`
-            updateConfigValue(uploadTarget, publicPath)
-            toast.success('图片上传成功')
-        } catch (error: any) {
-            console.error(error)
-            toast.error('图片上传失败: ' + error.message)
-        } finally {
-            setUploadingImage(false)
-            setUploadTarget('')
-            if (imageInputRef.current) imageInputRef.current.value = ''
-        }
+        const previewUrl = URL.createObjectURL(file)
+        setPendingImages(prev => ({ ...prev, [uploadTarget]: { file, previewUrl } }))
+        
+        // Update preview in UI immediately
+        updateConfigValue(uploadTarget, previewUrl)
+        
+        setUploadTarget('')
+        if (imageInputRef.current) imageInputRef.current.value = ''
+        toast.info('图片已缓存，保存配置时会统一上传')
     }
 
     const handleImportKey = () => {
@@ -449,17 +445,13 @@ export function ConfigPage() {
                                         <div className="space-y-2 p-2">
                                             {(parsedConfig?.user?.sidebar?.social || []).map((item: any, index: number) => (
                                                 <div key={index} className="flex items-center gap-3 group p-2 hover:bg-base-200/50 rounded-xl transition-colors">
-                                                    <select 
-                                                        className="select select-bordered select-sm w-32 bg-base-100 focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary transition-all"
-                                                        value={SOCIAL_PRESETS.find(p => p.value === item.svg)?.value || 'ri:link'}
-                                                        onChange={e => {
-                                                            handleSocialChange(index, 'svg', e.target.value)
-                                                        }}
-                                                    >
-                                                        {SOCIAL_PRESETS.map(p => (
-                                                            <option key={p.value} value={p.value}>{p.label}</option>
-                                                        ))}
-                                                    </select>
+                                                    <div className="w-32">
+                                                        <CustomSelect
+                                                            value={SOCIAL_PRESETS.find(p => p.value === item.svg)?.value || 'ri:link'}
+                                                            onChange={val => handleSocialChange(index, 'svg', val)}
+                                                            options={SOCIAL_PRESETS}
+                                                        />
+                                                    </div>
                                                     
                                                     <input 
                                                         type="text" 
@@ -557,12 +549,11 @@ export function ConfigPage() {
                                         <div className="card bg-base-100 shadow-sm border border-base-200 p-6 rounded-2xl space-y-4">
                                             <div className="form-control w-full">
                                                 <label className="label"><span className="label-text font-medium">评论插件</span></label>
-                                                <select className="select select-bordered w-full bg-base-100 focus:border-primary focus:ring-2 focus:ring-primary/20 hover:border-primary transition-all"
+                                                <CustomSelect
                                                     value={parsedConfig?.comments?.type || 'giscus'}
-                                                    onChange={e => updateConfigValue('comments.type', e.target.value)}>
-                                                    <option value="giscus">Giscus</option>
-                                                    <option value="waline">Waline</option>
-                                                </select>
+                                                    onChange={val => updateConfigValue('comments.type', val)}
+                                                    options={COMMENT_PROVIDERS}
+                                                />
                                             </div>
 
                                             {parsedConfig?.comments?.type === 'giscus' && (
