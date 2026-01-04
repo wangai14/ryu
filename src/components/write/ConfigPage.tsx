@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { toast, Toaster } from 'sonner'
 import { getAuthToken } from '@/lib/auth'
 import { GITHUB_CONFIG } from '@/consts'
 import { readTextFileFromRepo, putFile } from '@/lib/github-client'
@@ -19,7 +19,7 @@ const SOCIAL_PRESETS = [
     { label: 'Other', value: 'ri:link' }
 ]
 
-export function ConfigModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ConfigPage() {
 	const [configContent, setConfigContent] = useState('')
 	const [loading, setLoading] = useState(false)
 	const [saving, setSaving] = useState(false)
@@ -27,10 +27,8 @@ export function ConfigModal({ open, onClose }: { open: boolean; onClose: () => v
     const [parsedConfig, setParsedConfig] = useState<any>(null)
 
 	useEffect(() => {
-		if (open) {
-			loadConfig()
-		}
-	}, [open])
+		loadConfig()
+	}, [])
 
     useEffect(() => {
         if (configContent && mode === 'visual') {
@@ -150,7 +148,6 @@ export function ConfigModal({ open, onClose }: { open: boolean; onClose: () => v
 				GITHUB_CONFIG.BRANCH
 			)
 			toast.success('配置已更新！等待部署生效')
-			onClose()
 		} catch (error: any) {
 			toast.error('保存配置失败: ' + error.message)
 		} finally {
@@ -158,11 +155,10 @@ export function ConfigModal({ open, onClose }: { open: boolean; onClose: () => v
 		}
 	}
 
-	if (!open) return null
-
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-			<div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl dark:bg-zinc-900 max-h-[90vh] flex flex-col overflow-hidden">
+		<div className="min-h-screen bg-base-100 pt-24 pb-12">
+            <Toaster richColors position="top-center" />
+			<div className="w-full max-w-4xl mx-auto rounded-2xl bg-white shadow-xl dark:bg-zinc-900 flex flex-col overflow-hidden border border-zinc-100 dark:border-zinc-800">
 				{/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
                     <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">站点配置</h2>
@@ -174,9 +170,8 @@ export function ConfigModal({ open, onClose }: { open: boolean; onClose: () => v
                         >
                             {mode === 'visual' ? '预览' : '可视化'}
                         </button>
-                        <button onClick={onClose} className="btn btn-sm btn-ghost">取消</button>
                         <button onClick={handleSave} disabled={saving || loading} className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-none px-6">
-                            {saving ? '保存中...' : '导入键'}
+                            {saving ? '保存中...' : '保存配置'}
                         </button>
                     </div>
 				</div>
@@ -187,7 +182,7 @@ export function ConfigModal({ open, onClose }: { open: boolean; onClose: () => v
                     <div className="flex-1 overflow-y-auto bg-zinc-50/50 dark:bg-zinc-950/50 p-6">
                         {mode === 'code' ? (
                             <textarea
-                                className="h-full w-full rounded-xl border border-zinc-200 bg-white p-4 font-mono text-sm text-zinc-900 focus:border-red-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 resize-none shadow-sm"
+                                className="h-[600px] w-full rounded-xl border border-zinc-200 bg-white p-4 font-mono text-sm text-zinc-900 focus:border-red-500 focus:outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 resize-none shadow-sm"
                                 value={configContent}
                                 onChange={(e) => setConfigContent(e.target.value)}
                                 spellCheck={false}

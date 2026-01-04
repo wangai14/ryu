@@ -4,14 +4,12 @@ import { toast } from 'sonner'
 import { useWriteStore } from '../stores/write-store'
 import { usePreviewStore } from '../stores/preview-store'
 import { usePublish } from '../hooks/use-publish'
-import { ConfigModal } from './config-modal'
 
 export function WriteActions() {
 	const { loading, mode, form, loadBlogForEdit, originalSlug, updateForm } = useWriteStore()
 	const { openPreview } = usePreviewStore()
 	const { isAuth, onChoosePrivateKey, onPublish, onDelete } = usePublish()
 	const [saving, setSaving] = useState(false)
-	const [showConfig, setShowConfig] = useState(false)
 	const keyInputRef = useRef<HTMLInputElement>(null)
 	const mdInputRef = useRef<HTMLInputElement>(null)
 
@@ -68,8 +66,6 @@ export function WriteActions() {
 
 	return (
 		<>
-			<ConfigModal open={showConfig} onClose={() => setShowConfig(false)} />
-			
 			{loading && (
 				<div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-black/80">
 					<div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
@@ -118,17 +114,6 @@ export function WriteActions() {
 						</motion.button>
 					</>
 				)}
-
-				<motion.button
-					initial={{ opacity: 0, scale: 0.6 }}
-					animate={{ opacity: 1, scale: 1 }}
-					whileHover={{ scale: 1.05 }}
-					whileTap={{ scale: 0.95 }}
-					className='bg-card rounded-xl border px-4 py-2 text-sm'
-					disabled={loading}
-					onClick={() => setShowConfig(true)}>
-					配置
-				</motion.button>
 
 				<motion.button
 					initial={{ opacity: 0, scale: 0.6 }}
