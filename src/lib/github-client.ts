@@ -249,6 +249,26 @@ export async function listRepoFilesRecursive(token: string | null | undefined, o
 	return fetchPath(path)
 }
 
+export async function listRepoDir(token: string | null | undefined, owner: string, repo: string, path: string, ref: string): Promise<any[]> {
+	const headers: HeadersInit = {
+		Accept: 'application/vnd.github+json',
+		'X-GitHub-Api-Version': '2022-11-28'
+	}
+	if (token) {
+		headers.Authorization = `Bearer ${token}`
+	}
+
+	const res = await fetch(`${GH_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`, {
+		headers
+	})
+	if (res.status === 401) handle401Error()
+	if (res.status === 422) handle422Error()
+	if (res.status === 404) return []
+	if (!res.ok) throw new Error(`read directory failed: ${res.status}`)
+	const data = await res.json()
+	return Array.isArray(data) ? data : [data]
+}
+
 export async function createBlob(
 	token: string,
 	owner: string,
