@@ -124,12 +124,12 @@ export function ConfigPage() {
         if (!social[index]) social[index] = {}
         social[index][field] = value
         
-        // Auto-set title/ariaLabel if not set
+        // Auto-set title/ariaLabel when icon changes
         if (field === 'svg') {
             const preset = SOCIAL_PRESETS.find(p => p.value === value)
             if (preset) {
-                if (!social[index].title) social[index].title = preset.label
-                if (!social[index].ariaLabel) social[index].ariaLabel = preset.label
+                social[index].title = preset.label
+                social[index].ariaLabel = preset.label
             }
         }
         

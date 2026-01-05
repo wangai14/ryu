@@ -31,13 +31,20 @@ import { USER_NAME, USER_SITE, USER_FOOTER_SOCIAL_ICONS } from "@config";
     <span class="footer-title text-xs md:text-sm">Social</span>
     <div class="grid grid-flow-col gap-3 md:gap-4">
       {
-        USER_FOOTER_SOCIAL_ICONS.map((icon) => (
+        USER_FOOTER_SOCIAL_ICONS.map((icon) => {
+          let href = icon.href;
+          if ((icon.svg.includes('mail') || icon.svg.includes('at-line')) && !href.startsWith('mailto:')) {
+            href = `mailto:${href}`;
+          } else if (icon.svg.includes('qq') && /^\d+$/.test(href)) {
+            href = `tencent://message/?uin=${href}&Site=&Menu=yes`;
+          }
+          return (
           <div class="tooltip" data-tip={icon.title}>
-            <a href={icon.href} aria-label={icon.ariaLabel}>
+            <a href={href} aria-label={icon.ariaLabel}>
               <Icon name={icon.svg} class="text-xl md:text-xl" />
             </a>
           </div>
-        ))
+        )})
       }
       <div class="tooltip" data-tip="RSS Feed">
         <a href="/rss.xml" aria-label="RSS Feed">
