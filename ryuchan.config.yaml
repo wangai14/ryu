@@ -92,6 +92,9 @@ site:
       href: /about
       svg: material-symbols:info-outline-rounded
       target: _self
+  beian:
+    number: 备案Demo
+    link: https://hub.xiaozhangya.xin
 anime:
   bilibili:
     uid: '1536411565'
