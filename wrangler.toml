@@ -1,0 +1,13 @@
+name = "ryuchan"
+source = "./"
+
+[build]
+command = "pnpm run build"
+output_dir = "dist"
+
+# Pages configuration
+pages_build_output_dir = "dist"
+
+[build.environment]
+NODE_VERSION = "22"
+PNPM_VERSION = "10.11.1"
