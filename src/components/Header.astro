@@ -10,7 +10,13 @@ const { title, description, favicon, image } = Astro.props as HeaderProps;
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="icon" type="image" href={favicon} />
+<!-- Favicon for all browsers -->
+<link rel="icon" type="image/x-icon" href={favicon} />
+<link rel="shortcut icon" href={favicon} />
+
+<!-- Apple Touch Icon for iOS devices (using existing favicon) -->
+<link rel="apple-touch-icon" href={favicon} />
+<link rel="apple-touch-icon-precomposed" href={favicon} />
 <meta name="generator" content={Astro.generator} />
 
 <meta name="description" content={description} />
