@@ -136,6 +136,10 @@ user:
         ariaLabel: RSS
         title: RSS
         svg: ri:rss-fill
+      - href: https://weibo.com/u/7579913510
+        title: Weibo
+        ariaLabel: Weibo
+        svg: ri:weibo-fill
   footer:
     social:
       - href: https://github.com/kobaridev
